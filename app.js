@@ -174,13 +174,13 @@ function fmtSessionTime(ms) {
 function updateStats() {
   // ── Human column ────────────────────────────────────────────────────────
   if (orderTimes.length === 0) {
-    statAvgEl.textContent     = "—";
-    statFastestEl.textContent = "—";
+    statAvgEl.textContent = "—";
+    if (statFastestEl) statFastestEl.textContent = "—";
   } else {
     const avg     = orderTimes.reduce((a, b) => a + b, 0) / orderTimes.length;
     const fastest = Math.min(...orderTimes);
-    statAvgEl.textContent     = fmtMs(avg);
-    statFastestEl.textContent = fmtMs(fastest);
+    statAvgEl.textContent = fmtMs(avg);
+    if (statFastestEl) statFastestEl.textContent = fmtMs(fastest);
   }
 
   const errRate = humanTotalPresses > 0
@@ -194,13 +194,13 @@ function updateStats() {
 
   // ── Agent column ────────────────────────────────────────────────────────
   if (agentOrderTimes.length === 0) {
-    statAgentAvgEl.textContent     = "—";
-    statAgentFastestEl.textContent = "—";
+    statAgentAvgEl.textContent = "—";
+    if (statAgentFastestEl) statAgentFastestEl.textContent = "—";
   } else {
     const agentAvg     = agentOrderTimes.reduce((a, b) => a + b, 0) / agentOrderTimes.length;
     const agentFastest = Math.min(...agentOrderTimes);
-    statAgentAvgEl.innerHTML     = `<span class="agent-faster">${fmtMs(agentAvg)}</span>`;
-    statAgentFastestEl.innerHTML = `<span class="agent-faster">${fmtMs(agentFastest)}</span>`;
+    statAgentAvgEl.innerHTML = `<span class="agent-faster">${fmtMs(agentAvg)}</span>`;
+    if (statAgentFastestEl) statAgentFastestEl.innerHTML = `<span class="agent-faster">${fmtMs(agentFastest)}</span>`;
   }
   statAgentErrorsEl.innerHTML = `<span class="agent-faster">0%</span>`;
 }
