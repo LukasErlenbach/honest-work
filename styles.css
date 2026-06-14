@@ -193,8 +193,24 @@ body {
 /* ─── Relentless session clock ───────────────────────────────────────────── */
 .session-clock-row {
   display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 1.2rem;
+}
+
+.session-clock-group {
+  display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+.session-clock-sep {
+  font-size: 2rem;
+  color: var(--accent);
+  opacity: 0.2;
+  align-self: flex-end;
+  line-height: 1;
+  padding-bottom: 0.05rem;
 }
 
 .session-clock-label {

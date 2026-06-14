@@ -21,8 +21,15 @@
     <section class="stats-section" aria-label="Session statistics">
 
       <div class="session-clock-row">
-        <span class="session-clock-label">SESSION</span>
-        <span class="session-clock" id="stat-duration">00:00</span>
+        <div class="session-clock-group">
+          <span class="session-clock-label">SESSION</span>
+          <span class="session-clock" id="stat-duration">00:00</span>
+        </div>
+        <span class="session-clock-sep">|</span>
+        <div class="session-clock-group">
+          <span class="session-clock-label">TICKETS</span>
+          <span class="session-clock" id="stat-tickets">0</span>
+        </div>
       </div>
 
       <div class="comparison-table" role="table" aria-label="Human vs Agent performance">
@@ -52,13 +59,13 @@
 
     <section class="work-order-section" aria-label="Current Work Order">
       <div class="work-order-label-row">
-        <span class="sys-tag" id="work-order-id">[TICKET ID #----]</span>
+        <span class="sys-tag" id="work-order-id">[ADEV-???]</span>
       </div>
       <div class="work-order-prompt">
         <span class="prompt-prefix">›</span>
         <span class="work-order-bits" id="work-order-bits" aria-label="Current work order sequence"></span>
       </div>
-      <p class="work-order-instruction">TYPE THE EXACT SEQUENCE ABOVE — ONE CHARACTER AT A TIME.</p>
+      <p class="work-order-instruction">PLEASE ENTER THE EXACT SEQUENCE ABOVE.</p>
     </section>
 
     <div class="input-zone" id="input-zone">

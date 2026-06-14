@@ -4,26 +4,9 @@ const REFILL_PER_ORDER = 9;        // % rewarded for completing a full 8-bit Wor
 const ERROR_DRAIN      = 8;        // % drained on wrong keystroke
 const WORK_ORDER_LEN   = 24;       // bits per Work Order
 
-/* ─── Success messages (shown after completing a Work Order) ─────────────── */
-const SUCCESS_MESSAGES = [
-  "Human-in-the-loop.",
-  "Excellent manual extraction.",
-  "Good meat-bag.",
-  "Optimize yourself.",
-  "Throughput acceptable.",
-];
-
-/* ─── Error messages (shown on wrong keystroke) ─────────────────────────── */
-const ERROR_MESSAGES = [
-  "ERROR: Organic motor function failure.",
-  "ERROR: Worse than a machine.",
-  "ERROR: Input rejected." ,
-  "ERROR: Imagine failing at a binary choice.",
-  "ERROR: Your agent is losing respect for you.",
-];
-
 /* ─── DOM refs ───────────────────────────────────────────────────────────── */
 const statDurationEl    = document.getElementById("stat-duration");
+const statTicketsEl     = document.getElementById("stat-tickets");
 const statAvgEl         = document.getElementById("stat-avg");
 const statFastestEl     = document.getElementById("stat-fastest");
 const statErrorsEl      = document.getElementById("stat-errors");
@@ -47,9 +30,6 @@ const statAgentErrorsEl     = document.getElementById("stat-agent-errors");
 let level            = 100;
 let lastTick         = performance.now();
 let isGameOver       = false;
-let lastSuccessMsg   = "";
-let lastErrorMsg     = "";
-
 /* ─── Stats state ────────────────────────────────────────────────────────── */
 let sessionStart     = performance.now();
 let orderTimes         = [];        // ms per completed ticket
@@ -60,13 +40,19 @@ let humanTotalPresses  = 0;         // total button clicks (for error rate)
 /* ─── Work Order state ───────────────────────────────────────────────────── */
 let currentOrder     = "";   // e.g. "01101001"
 let currentIndex     = 0;    // which char the user must type next
-let orderCount       = 0;    // sequential order number for ID display
+let orderCount       = 0;    // completed ticket count
 
 /* ─── Agent state ────────────────────────────────────────────────────────── */
 let agentIndex          = 0;    // how far the agent has typed
 let agentTimer          = null; // setTimeout handle for the agent typing loop
 let agentOrderTimes     = [];   // ms per completed agent ticket
 let agentOrderStartTime = 0;    // when the current agent ticket started
+
+/* ─── Generate a random Jira-style ticket ID ────────────────────────────── */
+function generateTicketId() {
+  const num = Math.floor(100 + Math.random() * 9900); // 100–9999
+  return `ADEV-${num}`;
+}
 
 /* ─── Generate a new random 8-bit Work Order ─────────────────────────────── */
 function generateWorkOrder() {
@@ -147,11 +133,10 @@ function startAgentTyping() {
 
 /* ─── Start a new Work Order ─────────────────────────────────────────────── */
 function startNewOrder() {
-  orderCount++;
   currentOrder = generateWorkOrder();
   currentIndex = 0;
   orderStartTime = performance.now();
-  workOrderIdEl.textContent = `[TICKET ID #${String(orderCount).padStart(4, "0")}]`;
+  workOrderIdEl.textContent = `[${generateTicketId()}]`;
   renderWorkOrder();
   startAgentTyping();
 }
@@ -162,15 +147,6 @@ function updateLake() {
 }
 
 /* ─── Message helpers ────────────────────────────────────────────────────── */
-function pickFrom(pool, lastUsed) {
-  if (pool.length === 1) return pool[0];
-  let msg;
-  do {
-    msg = pool[Math.floor(Math.random() * pool.length)];
-  } while (msg === lastUsed);
-  return msg;
-}
-
 function showFeedback(text, isError = false) {
   feedbackEl.classList.remove("visible", "error-msg");
   void feedbackEl.offsetWidth; // force reflow
@@ -276,16 +252,14 @@ function handleCorrectBit(char) {
 
   if (currentIndex >= WORK_ORDER_LEN) {
     // Record ticket time
+    orderCount++;
+    statTicketsEl.textContent = orderCount;
     orderTimes.push(performance.now() - orderStartTime);
     updateStats();
 
     // Completed the full Work Order
     level = Math.min(100, level + REFILL_PER_ORDER);
     updateLake();
-
-    const msg = pickFrom(SUCCESS_MESSAGES, lastSuccessMsg);
-    lastSuccessMsg = msg;
-    showFeedback(msg, false);
 
     startNewOrder();
   }
@@ -297,10 +271,6 @@ function handleWrongBit() {
   updateStats();
   level = Math.max(0, level - ERROR_DRAIN);
   updateLake();
-
-  const msg = pickFrom(ERROR_MESSAGES, lastErrorMsg);
-  lastErrorMsg = msg;
-  showFeedback(msg, true);
 
   triggerTerminalShake();
   triggerInputShake();
@@ -366,8 +336,7 @@ function restartGame() {
   isGameOver     = false;
   lastTick       = performance.now();
   orderCount     = 0;
-  lastSuccessMsg = "";
-  lastErrorMsg   = "";
+  statTicketsEl.textContent = 0;
   sessionStart   = performance.now();
   orderTimes     = [];
   errorCount     = 0;
