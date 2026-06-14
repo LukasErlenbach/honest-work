@@ -320,8 +320,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ─── Bit button handlers ────────────────────────────────────────────────── */
-btn0.addEventListener("click", () => { processBit("0"); });
-btn1.addEventListener("click", () => { processBit("1"); });
+btn0.addEventListener("click", () => processBit("0"));
+btn1.addEventListener("click", () => processBit("1"));
 
 /* ─── Game Over ──────────────────────────────────────────────────────────── */
 function triggerGameOver() {
