@@ -2,7 +2,7 @@
 const DRAIN_PER_SEC    = 8 / 60;   // % per second — relentless
 const REFILL_PER_ORDER = 9;        // % rewarded for completing a full 8-bit Work Order
 const ERROR_DRAIN      = 8;        // % drained on wrong keystroke
-const WORK_ORDER_LEN   = 24;       // bits per Work Order
+const WORK_ORDER_LEN   = 16;       // bits per Work Order
 
 /* ─── DOM refs ───────────────────────────────────────────────────────────── */
 const statDurationEl    = document.getElementById("stat-duration");
