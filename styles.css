@@ -768,7 +768,8 @@ body {
   .sys-title {
     font-size: 1.15rem;
   }
-  .work-order-bits {
+  .work-order-bits,
+  .agent-bits {
     font-size: 1.4rem;
     letter-spacing: 0.15em;
   }
