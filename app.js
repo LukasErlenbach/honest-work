@@ -2,56 +2,71 @@
 const DRAIN_PER_SEC    = 8 / 60;   // % per second — relentless
 const REFILL_PER_ORDER = 9;        // % rewarded for completing a full 8-bit Work Order
 const ERROR_DRAIN      = 8;        // % drained on wrong keystroke
-const WORK_ORDER_LEN   = 8;        // bits per Work Order
-const MAX_SEDIMENT     = 120;
+const WORK_ORDER_LEN   = 24;       // bits per Work Order
 
 /* ─── Success messages (shown after completing a Work Order) ─────────────── */
 const SUCCESS_MESSAGES = [
-  "Human-in-the-loop: performance sub-optimal but tolerated.",
-  "Excellent manual extraction. The silicon appreciates your biological sacrifice.",
-  "A 4-year degree well spent on basic bit-setting.",
-  "Good meat-bag. Keep feeding the model.",
-  "Your agent has detected slight latency in your finger joints. Optimize.",
-  "Throughput acceptable. You are successfully delaying your existential dread.",
+  "Human-in-the-loop.",
+  "Excellent manual extraction.",
+  "Good meat-bag.",
+  "Optimize yourself.",
+  "Throughput acceptable.",
 ];
 
 /* ─── Error messages (shown on wrong keystroke) ─────────────────────────── */
 const ERROR_MESSAGES = [
-  "ERROR: Organic motor function failure. Brain-to-hand latency detected.",
-  "ERROR: A machine would never have pressed that key.",
-  "ERROR: Input rejected. Are your squishy eyes getting tired?",
-  "ERROR: Imagine failing at a binary choice. Literally two options.",
-  "ERROR: Progress penalized. Your agent is losing respect for you.",
-  "ERROR: Human error rate exceeding permissible thresholds.",
+  "ERROR: Organic motor function failure.",
+  "ERROR: Worse than a machine.",
+  "ERROR: Input rejected." ,
+  "ERROR: Imagine failing at a binary choice.",
+  "ERROR: Your agent is losing respect for you.",
 ];
 
 /* ─── DOM refs ───────────────────────────────────────────────────────────── */
-const lakeFill        = document.getElementById("lake-fill");
-const lakeLabel       = document.getElementById("lake-label");
-const lakeTrack       = document.getElementById("lake-track");
-const bitInput        = document.getElementById("bit-input");
-const feedbackEl      = document.getElementById("feedback");
-const sedimentEl      = document.getElementById("sediment-container");
-const terminalEl      = document.getElementById("terminal");
-const inputZoneEl     = document.getElementById("input-zone");
-const promptLineEl    = inputZoneEl.querySelector(".prompt-line");
-const workOrderBitsEl = document.getElementById("work-order-bits");
-const workOrderIdEl   = document.getElementById("work-order-id");
-const gameOverEl      = document.getElementById("game-over");
-const restartBtn      = document.getElementById("restart-btn");
+const statDurationEl    = document.getElementById("stat-duration");
+const statAvgEl         = document.getElementById("stat-avg");
+const statFastestEl     = document.getElementById("stat-fastest");
+const statErrorsEl      = document.getElementById("stat-errors");
+const bitInput          = document.getElementById("bit-input");
+const feedbackEl        = document.getElementById("feedback");
+const terminalEl        = document.getElementById("terminal");
+const inputZoneEl       = document.getElementById("input-zone");
+const workOrderBitsEl   = document.getElementById("work-order-bits");
+const workOrderIdEl     = document.getElementById("work-order-id");
+const gameOverEl        = document.getElementById("game-over");
+const restartBtn        = document.getElementById("restart-btn");
+const btn0              = document.getElementById("btn-0");
+const btn1              = document.getElementById("btn-1");
+const agentBitsEl           = document.getElementById("agent-bits");
+const agentStatusEl         = document.getElementById("agent-status");
+const statAgentAvgEl        = document.getElementById("stat-agent-avg");
+const statAgentFastestEl    = document.getElementById("stat-agent-fastest");
+const statAgentErrorsEl     = document.getElementById("stat-agent-errors");
 
 /* ─── State ──────────────────────────────────────────────────────────────── */
 let level            = 100;
 let lastTick         = performance.now();
 let isGameOver       = false;
-let sedimentCount    = 0;
 let lastSuccessMsg   = "";
 let lastErrorMsg     = "";
+
+/* ─── Stats state ────────────────────────────────────────────────────────── */
+let sessionStart     = performance.now();
+let orderTimes         = [];        // ms per completed ticket
+let orderStartTime     = 0;         // when the current ticket began
+let errorCount         = 0;         // total wrong keystrokes this session
+let humanTotalPresses  = 0;         // total button clicks (for error rate)
 
 /* ─── Work Order state ───────────────────────────────────────────────────── */
 let currentOrder     = "";   // e.g. "01101001"
 let currentIndex     = 0;    // which char the user must type next
 let orderCount       = 0;    // sequential order number for ID display
+
+/* ─── Agent state ────────────────────────────────────────────────────────── */
+let agentIndex          = 0;    // how far the agent has typed
+let agentTimer          = null; // setTimeout handle for the agent typing loop
+let agentOrderTimes     = [];   // ms per completed agent ticket
+let agentOrderStartTime = 0;    // when the current agent ticket started
 
 /* ─── Generate a new random 8-bit Work Order ─────────────────────────────── */
 function generateWorkOrder() {
@@ -80,32 +95,70 @@ function renderWorkOrder() {
   }
 }
 
+/* ─── Render the Agent's Work Order with per-character state classes ──────── */
+function renderAgentOrder() {
+  agentBitsEl.innerHTML = "";
+  for (let i = 0; i < currentOrder.length; i++) {
+    const span = document.createElement("span");
+    span.className = "bit-char";
+    span.textContent = currentOrder[i];
+    if (i < agentIndex) {
+      span.classList.add("done");
+    } else if (i === agentIndex) {
+      span.classList.add("active");
+    } else {
+      span.classList.add("pending");
+    }
+    agentBitsEl.appendChild(span);
+  }
+}
+
+/* ─── Simulate the Agent typing its assigned string automatically ─────────── */
+function startAgentTyping() {
+  // Cancel any previous typing loop
+  if (agentTimer !== null) {
+    clearTimeout(agentTimer);
+    agentTimer = null;
+  }
+  agentIndex = 0;
+  agentOrderStartTime = performance.now();
+  agentStatusEl.setAttribute("hidden", "");
+  renderAgentOrder();
+
+  function typeNextChar() {
+    if (isGameOver) return;
+    if (agentIndex >= currentOrder.length) {
+      // Agent finished — record time, update comparison, show idle status
+      agentOrderTimes.push(performance.now() - agentOrderStartTime);
+      updateStats();
+      agentStatusEl.removeAttribute("hidden");
+      agentTimer = null;
+      return;
+    }
+    agentIndex++;
+    renderAgentOrder();
+    const delay = 50 + Math.random() * 350; // 50–400 ms
+    agentTimer = setTimeout(typeNextChar, delay);
+  }
+
+  // Tiny initial pause so the parallel start is visually obvious
+  agentTimer = setTimeout(typeNextChar, 50 + Math.random() * 350);
+}
+
 /* ─── Start a new Work Order ─────────────────────────────────────────────── */
 function startNewOrder() {
   orderCount++;
   currentOrder = generateWorkOrder();
   currentIndex = 0;
-  workOrderIdEl.textContent = `ID:${String(orderCount).padStart(4, "0")}`;
+  orderStartTime = performance.now();
+  workOrderIdEl.textContent = `[TICKET ID #${String(orderCount).padStart(4, "0")}]`;
   renderWorkOrder();
+  startAgentTyping();
 }
 
-/* ─── Lake update ────────────────────────────────────────────────────────── */
+/* ─── Lake update (meter removed from DOM; level still drives game-over) ─── */
 function updateLake() {
-  const pct = Math.max(0, Math.min(100, level));
-  lakeFill.style.width = `${pct}%`;
-  lakeLabel.textContent = `${Math.round(pct)}%`;
-  lakeTrack.setAttribute("aria-valuenow", String(Math.round(pct)));
-
-  if (pct < 20) {
-    lakeFill.style.boxShadow = "0 0 3px #ff2244, 0 0 10px rgba(255,34,68,0.6)";
-    lakeFill.style.background = "#ff2244";
-  } else if (pct < 40) {
-    lakeFill.style.boxShadow = "0 0 3px #ffaa00, 0 0 8px rgba(255,100,0,0.5)";
-    lakeFill.style.background = "#ff6600";
-  } else {
-    lakeFill.style.boxShadow = "";
-    lakeFill.style.background = "";
-  }
+  // no DOM meter — level variable is kept for game-over drain logic only
 }
 
 /* ─── Message helpers ────────────────────────────────────────────────────── */
@@ -126,40 +179,54 @@ function showFeedback(text, isError = false) {
   feedbackEl.classList.add("visible");
 }
 
-/* ─── Sediment: spawn a falling bit character ────────────────────────────── */
-function spawnSedimentBit(char) {
-  if (sedimentCount >= MAX_SEDIMENT) {
-    const oldest = sedimentEl.firstElementChild;
-    if (oldest) { oldest.remove(); sedimentCount--; }
+/* ─── Stats helpers ──────────────────────────────────────────────────────── */
+function fmtMs(ms) {
+  if (ms < 60000) {
+    return (ms / 1000).toFixed(1) + "s";
+  }
+  const m = Math.floor(ms / 60000);
+  const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function fmtSessionTime(ms) {
+  const m = String(Math.floor(ms / 60000)).padStart(2, "0");
+  const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function updateStats() {
+  // ── Human column ────────────────────────────────────────────────────────
+  if (orderTimes.length === 0) {
+    statAvgEl.textContent     = "—";
+    statFastestEl.textContent = "—";
+  } else {
+    const avg     = orderTimes.reduce((a, b) => a + b, 0) / orderTimes.length;
+    const fastest = Math.min(...orderTimes);
+    statAvgEl.textContent     = fmtMs(avg);
+    statFastestEl.textContent = fmtMs(fastest);
   }
 
-  const containerW = sedimentEl.offsetWidth;
-  const containerH = sedimentEl.offsetHeight;
+  const errRate = humanTotalPresses > 0
+    ? ((errorCount / humanTotalPresses) * 100).toFixed(1) + "%"
+    : "0%";
+  if (errorCount > 0) {
+    statErrorsEl.innerHTML = `<span class="stat-error-nonzero">${errRate}</span>`;
+  } else {
+    statErrorsEl.textContent = errRate;
+  }
 
-  const el = document.createElement("span");
-  el.className = "sediment-bit";
-  el.textContent = char;
-
-  const x        = Math.random() * Math.max(containerW - 20, 1);
-  const fallDist = containerH * (0.6 + Math.random() * 0.38);
-  const dur      = (1.8 + Math.random() * 2.0).toFixed(2);
-  const delay    = (Math.random() * 0.1).toFixed(2);
-
-  el.style.cssText = `
-    left: ${x}px;
-    top: 0;
-    --fall-dur: ${dur}s;
-    --fall-delay: ${delay}s;
-    --fall-dist: ${fallDist.toFixed(0)}px;
-  `;
-
-  sedimentEl.appendChild(el);
-  sedimentCount++;
-
-  el.addEventListener("animationend", () => {
-    el.remove();
-    sedimentCount--;
-  }, { once: true });
+  // ── Agent column ────────────────────────────────────────────────────────
+  if (agentOrderTimes.length === 0) {
+    statAgentAvgEl.textContent     = "—";
+    statAgentFastestEl.textContent = "—";
+  } else {
+    const agentAvg     = agentOrderTimes.reduce((a, b) => a + b, 0) / agentOrderTimes.length;
+    const agentFastest = Math.min(...agentOrderTimes);
+    statAgentAvgEl.innerHTML     = `<span class="agent-faster">${fmtMs(agentAvg)}</span>`;
+    statAgentFastestEl.innerHTML = `<span class="agent-faster">${fmtMs(agentFastest)}</span>`;
+  }
+  statAgentErrorsEl.innerHTML = `<span class="agent-faster">0%</span>`;
 }
 
 /* ─── Screen shake (whole terminal) ─────────────────────────────────────── */
@@ -180,12 +247,6 @@ function triggerInputShake() {
   inputZoneEl.addEventListener("animationend", () => {
     inputZoneEl.classList.remove("shake-input");
   }, { once: true });
-}
-
-/* ─── Prompt error flash ─────────────────────────────────────────────────── */
-function triggerPromptError() {
-  promptLineEl.classList.add("error-flash");
-  setTimeout(() => promptLineEl.classList.remove("error-flash"), 400);
 }
 
 /* ─── Ripple effect ──────────────────────────────────────────────────────── */
@@ -211,10 +272,13 @@ function triggerRipple(isError = false) {
 function handleCorrectBit(char) {
   currentIndex++;
   renderWorkOrder();
-  spawnSedimentBit(char);
   triggerRipple(false);
 
   if (currentIndex >= WORK_ORDER_LEN) {
+    // Record ticket time
+    orderTimes.push(performance.now() - orderStartTime);
+    updateStats();
+
     // Completed the full Work Order
     level = Math.min(100, level + REFILL_PER_ORDER);
     updateLake();
@@ -229,6 +293,8 @@ function handleCorrectBit(char) {
 
 /* ─── Handle wrong bit typed ─────────────────────────────────────────────── */
 function handleWrongBit() {
+  errorCount++;
+  updateStats();
   level = Math.max(0, level - ERROR_DRAIN);
   updateLake();
 
@@ -238,7 +304,6 @@ function handleWrongBit() {
 
   triggerTerminalShake();
   triggerInputShake();
-  triggerPromptError();
   triggerRipple(true);
 
   // Reset current order progress on error (must retype from scratch)
@@ -246,15 +311,12 @@ function handleWrongBit() {
   renderWorkOrder();
 }
 
-/* ─── Input event handler ────────────────────────────────────────────────── */
-function handleInput(event) {
-  if (isGameOver) { bitInput.value = ""; return; }
+/* ─── Shared bit processing (buttons only) ──────────────────────────────── */
+function processBit(char) {
+  if (isGameOver) return;
+  if (char !== "0" && char !== "1") return;
 
-  const char = event.data ?? bitInput.value.slice(-1);
-  bitInput.value = "";
-
-  if (char !== "0" && char !== "1") return; // ignore non-bit input silently
-
+  humanTotalPresses++;
   const expected = currentOrder[currentIndex];
   if (char === expected) {
     handleCorrectBit(char);
@@ -263,21 +325,33 @@ function handleInput(event) {
   }
 }
 
-/* ─── Keydown: block non-binary printable chars from being processed ─────── */
-function handleKeydown(event) {
-  if (event.key.length === 1 && event.key !== "0" && event.key !== "1") {
-    // Still fires handleInput with the wrong char → punishment applies.
-    // We do NOT preventDefault here so the input event fires and punishment triggers.
-  }
+/* ─── Keyboard disabled — show system warning on any key attempt ─────────── */
+let keyWarnDebounce = null;
+function showKeyboardWarning() {
+  if (isGameOver) return;
+  clearTimeout(keyWarnDebounce);
+  feedbackEl.classList.remove("visible", "error-msg");
+  void feedbackEl.offsetWidth;
+  feedbackEl.textContent = "> SYSTEM: Physical keyboard entry disabled. Please utilize the designated manual click interface.";
+  feedbackEl.classList.add("visible");
+  keyWarnDebounce = setTimeout(() => feedbackEl.classList.remove("visible"), 3000);
 }
 
 function handlePaste(event) {
   event.preventDefault();
 }
 
-/* ─── Keep input focused ─────────────────────────────────────────────────── */
-document.addEventListener("click",   () => { if (!isGameOver) bitInput.focus(); });
-document.addEventListener("keydown", () => { if (!isGameOver) bitInput.focus(); });
+/* ─── Intercept keyboard attempts — warn, don't process ─────────────────── */
+document.addEventListener("keydown", (e) => {
+  if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    showKeyboardWarning();
+  }
+});
+
+/* ─── Bit button handlers ────────────────────────────────────────────────── */
+btn0.addEventListener("click", () => { processBit("0"); });
+btn1.addEventListener("click", () => { processBit("1"); });
 
 /* ─── Game Over ──────────────────────────────────────────────────────────── */
 function triggerGameOver() {
@@ -288,21 +362,33 @@ function triggerGameOver() {
 
 /* ─── Restart ────────────────────────────────────────────────────────────── */
 function restartGame() {
-  level         = 100;
-  isGameOver    = false;
-  lastTick      = performance.now();
-  orderCount    = 0;
+  level          = 100;
+  isGameOver     = false;
+  lastTick       = performance.now();
+  orderCount     = 0;
   lastSuccessMsg = "";
   lastErrorMsg   = "";
+  sessionStart   = performance.now();
+  orderTimes     = [];
+  errorCount     = 0;
+
+  humanTotalPresses  = 0;
+  agentOrderTimes    = [];
+
+  // Clear any in-flight agent typing
+  if (agentTimer !== null) {
+    clearTimeout(agentTimer);
+    agentTimer = null;
+  }
+  agentIndex = 0;
+  agentStatusEl.setAttribute("hidden", "");
 
   gameOverEl.setAttribute("hidden", "");
   feedbackEl.classList.remove("visible", "error-msg");
   feedbackEl.textContent = "";
-  promptLineEl.classList.remove("error-flash");
-
+  updateStats();
   updateLake();
   startNewOrder();
-  bitInput.focus();
 }
 
 restartBtn.addEventListener("click", restartGame);
@@ -315,6 +401,7 @@ function tick(now) {
   if (!isGameOver && level > 0) {
     level = Math.max(0, level - DRAIN_PER_SEC * delta);
     updateLake();
+    statDurationEl.textContent = fmtSessionTime(now - sessionStart);
 
     if (level <= 0) {
       triggerGameOver();
@@ -324,12 +411,8 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
-/* ─── Boot ───────────────────────────────────────────────────────────────── */
-bitInput.addEventListener("input",   handleInput);
-bitInput.addEventListener("keydown", handleKeydown);
-bitInput.addEventListener("paste",   handlePaste);
+bitInput.addEventListener("paste", handlePaste);
 
 updateLake();
 startNewOrder();
-bitInput.focus();
 requestAnimationFrame(tick);

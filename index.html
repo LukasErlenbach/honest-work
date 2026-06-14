@@ -13,42 +13,46 @@
 
     <header class="sys-header">
       <div class="sys-title-row">
-        <span class="sys-tag">[SYS:INIT]</span>
         <h1 class="sys-title">Honest Human Work</h1>
       </div>
-      <p class="sys-subtitle">MANDATORY DAILY TIMESHEET — HUMAN LABOR CERTIFICATION v4.1</p>
-      <p class="sys-meta">agent:running&nbsp;&nbsp;·&nbsp;&nbsp;compliance:required&nbsp;&nbsp;·&nbsp;&nbsp;session:tracked&nbsp;&nbsp;·&nbsp;&nbsp;you:watched</p>
+      <p class="sys-subtitle">High-level cognitive processing has been fully automated for your convenience. To prevent organic brain fatigue and doomscrolling, please work on these low-barrier tickets while your agent is doing the heavy lifting.</p>
     </header>
 
-    <div class="doomscroll-warning" role="alert">
-      <span class="warn-tag">[WARN]</span>
-      <span class="warn-text">your agent is occupied — manual bit submission required to remain compliant.</span>
-    </div>
+    <section class="stats-section" aria-label="Session statistics">
 
-    <section class="data-lake" aria-label="Human Contribution Level">
-      <div class="lake-header">
-        <span class="lake-section-label">HUMAN CONTRIBUTION METER</span>
+      <div class="session-clock-row">
+        <span class="session-clock-label">SESSION</span>
+        <span class="session-clock" id="stat-duration">00:00</span>
       </div>
-      <div class="lake-line-wrap">
-        <div
-          class="lake-line-track"
-          role="progressbar"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow="100"
-          id="lake-track"
-        >
-          <div class="lake-line-fill" id="lake-fill"></div>
+
+      <div class="comparison-table" role="table" aria-label="Human vs Agent performance">
+        <div class="cmp-header-row" role="row">
+          <div class="cmp-metric-col" role="columnheader"></div>
+          <div class="cmp-human-col cmp-col-head" role="columnheader">[ HUMAN ]</div>
+          <div class="cmp-agent-col cmp-col-head" role="columnheader">[ AGENT ]</div>
         </div>
-        <span class="lake-label" id="lake-label">100%</span>
+        <div class="cmp-row" role="row">
+          <div class="cmp-metric-col cmp-label" role="rowheader">AVG / TICKET</div>
+          <div class="cmp-human-col" role="cell"><span id="stat-avg">—</span></div>
+          <div class="cmp-agent-col" role="cell"><span id="stat-agent-avg">—</span></div>
+        </div>
+        <div class="cmp-row" role="row">
+          <div class="cmp-metric-col cmp-label" role="rowheader">FASTEST</div>
+          <div class="cmp-human-col" role="cell"><span id="stat-fastest">—</span></div>
+          <div class="cmp-agent-col" role="cell"><span id="stat-agent-fastest">—</span></div>
+        </div>
+        <div class="cmp-row" role="row">
+          <div class="cmp-metric-col cmp-label" role="rowheader">ERROR RATE</div>
+          <div class="cmp-human-col" role="cell"><span id="stat-errors">0%</span></div>
+          <div class="cmp-agent-col" role="cell"><span id="stat-agent-errors">0%</span></div>
+        </div>
       </div>
-      <div class="sediment-container" id="sediment-container" aria-hidden="true"></div>
+
     </section>
 
     <section class="work-order-section" aria-label="Current Work Order">
       <div class="work-order-label-row">
-        <span class="sys-tag">[WORK-ORDER:MANDATORY]</span>
-        <span class="work-order-id" id="work-order-id">ID:----</span>
+        <span class="sys-tag" id="work-order-id">[TICKET ID #----]</span>
       </div>
       <div class="work-order-prompt">
         <span class="prompt-prefix">›</span>
@@ -68,9 +72,20 @@
         autofocus
         aria-label="Type the required bit character"
       />
-      <div class="prompt-line" aria-hidden="true">
-        <span class="prompt-prefix">›</span>
-        <span class="cursor" id="cursor">_</span>
+      <div class="bit-btns">
+        <button class="bit-btn" id="btn-0" tabindex="-1" aria-label="Submit bit 0">0</button>
+        <button class="bit-btn" id="btn-1" tabindex="-1" aria-label="Submit bit 1">1</button>
+      </div>
+    </div>
+
+    <div class="agent-block" id="agent-block">
+      <div class="agent-label-row">
+        <span class="agent-tag">[AGENT: BACKGROUND THREAD]</span>
+        <span class="agent-status" id="agent-status" hidden>[STATUS: IDLE / WAITING]</span>
+      </div>
+      <div class="agent-prompt">
+        <span class="prompt-prefix agent-prefix">›</span>
+        <span class="agent-bits" id="agent-bits" aria-label="Agent work order progress"></span>
       </div>
     </div>
 
