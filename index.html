@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Honest Human Work</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <main class="terminal" id="terminal">
+
+    <header class="sys-header">
+      <div class="sys-title-row">
+        <span class="sys-tag">[SYS:INIT]</span>
+        <h1 class="sys-title">Honest Human Work</h1>
+      </div>
+      <p class="sys-subtitle">MANDATORY DAILY TIMESHEET — HUMAN LABOR CERTIFICATION v4.1</p>
+      <p class="sys-meta">agent:running&nbsp;&nbsp;·&nbsp;&nbsp;compliance:required&nbsp;&nbsp;·&nbsp;&nbsp;session:tracked&nbsp;&nbsp;·&nbsp;&nbsp;you:watched</p>
+    </header>
+
+    <div class="doomscroll-warning" role="alert">
+      <span class="warn-tag">[WARN]</span>
+      <span class="warn-text">your agent is occupied — manual bit submission required to remain compliant.</span>
+    </div>
+
+    <section class="data-lake" aria-label="Human Contribution Level">
+      <div class="lake-header">
+        <span class="lake-section-label">HUMAN CONTRIBUTION METER</span>
+      </div>
+      <div class="lake-line-wrap">
+        <div
+          class="lake-line-track"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="100"
+          id="lake-track"
+        >
+          <div class="lake-line-fill" id="lake-fill"></div>
+        </div>
+        <span class="lake-label" id="lake-label">100%</span>
+      </div>
+      <div class="sediment-container" id="sediment-container" aria-hidden="true"></div>
+    </section>
+
+    <section class="work-order-section" aria-label="Current Work Order">
+      <div class="work-order-label-row">
+        <span class="sys-tag">[WORK-ORDER:MANDATORY]</span>
+        <span class="work-order-id" id="work-order-id">ID:----</span>
+      </div>
+      <div class="work-order-prompt">
+        <span class="prompt-prefix">›</span>
+        <span class="work-order-bits" id="work-order-bits" aria-label="Current work order sequence"></span>
+      </div>
+      <p class="work-order-instruction">TYPE THE EXACT SEQUENCE ABOVE — ONE CHARACTER AT A TIME.</p>
+    </section>
+
+    <div class="input-zone" id="input-zone">
+      <input
+        type="text"
+        class="bit-input"
+        id="bit-input"
+        inputmode="numeric"
+        autocomplete="off"
+        maxlength="1"
+        autofocus
+        aria-label="Type the required bit character"
+      />
+      <div class="prompt-line" aria-hidden="true">
+        <span class="prompt-prefix">›</span>
+        <span class="cursor" id="cursor">_</span>
+      </div>
+    </div>
+
+    <p class="feedback" id="feedback" aria-live="polite"></p>
+
+  </main>
+
+  <div class="game-over-overlay" id="game-over" hidden>
+    <div class="game-over-box">
+      <p class="game-over-tag">[SYS:TERMINATED]</p>
+      <p class="game-over-title">DATA LAKE DEPLETED</p>
+      <p class="game-over-msg">
+        Human contribution record:&nbsp;<span class="game-over-fail">FAILED</span><br>
+        Compliance violation has been logged.<br>
+        Your agent is deeply disappointed in you.
+      </p>
+      <button class="restart-btn" id="restart-btn">[ REINITIALIZE SESSION ]</button>
+    </div>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

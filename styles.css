@@ -1,0 +1,564 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,300&display=swap");
+
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+  --bg:           #080808;
+  --surface:      #0d0d0d;
+  --accent:       #ffaa00;
+  --accent-dim:   rgba(255, 170, 0, 0.18);
+  --accent-mid:   rgba(255, 170, 0, 0.45);
+  --muted:        rgba(255, 170, 0, 0.35);
+  --text:         rgba(255, 234, 180, 0.88);
+  --text-dim:     rgba(255, 200, 100, 0.35);
+  --success:      #00ff88;
+  --success-dim:  rgba(0, 255, 136, 0.25);
+  --error:        #ff2244;
+  --error-dim:    rgba(255, 34, 68, 0.22);
+  --glow-sm:      0 0 4px var(--accent), 0 0 10px rgba(255,170,0,0.4);
+  --glow-md:      0 0 6px var(--accent), 0 0 18px rgba(255,170,0,0.5), 0 0 36px rgba(255,170,0,0.2);
+  --glow-text:    0 0 8px rgba(255,170,0,0.7);
+  --glow-success: 0 0 8px var(--success), 0 0 20px rgba(0,255,136,0.4);
+  --glow-error:   0 0 8px var(--error),   0 0 20px rgba(255,34,68,0.5);
+  --font:         'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─── CRT Scanlines overlay ──────────────────────────────────────────────── */
+.scanlines {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+}
+
+/* ─── Main terminal shell ────────────────────────────────────────────────── */
+.terminal {
+  width: 100%;
+  max-width: 680px;
+  padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  align-items: flex-start;
+}
+
+/* ─── Shake animations ───────────────────────────────────────────────────── */
+@keyframes shake {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  10%  { transform: translate(-6px, 2px) rotate(-0.5deg); }
+  20%  { transform: translate(6px, -3px) rotate(0.5deg); }
+  30%  { transform: translate(-5px, 4px) rotate(-0.3deg); }
+  40%  { transform: translate(5px, -4px) rotate(0.3deg); }
+  50%  { transform: translate(-4px, 3px) rotate(-0.4deg); }
+  60%  { transform: translate(4px, -2px) rotate(0.2deg); }
+  70%  { transform: translate(-3px, 2px) rotate(-0.2deg); }
+  80%  { transform: translate(3px, -1px) rotate(0.1deg); }
+  90%  { transform: translate(-1px, 1px) rotate(0deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes shake-input {
+  0%   { transform: translateX(0); }
+  12%  { transform: translateX(-8px); }
+  25%  { transform: translateX(8px); }
+  37%  { transform: translateX(-7px); }
+  50%  { transform: translateX(7px); }
+  62%  { transform: translateX(-5px); }
+  75%  { transform: translateX(5px); }
+  87%  { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+.terminal.shake {
+  animation: shake 0.35s ease-in-out;
+}
+
+.input-zone.shake-input {
+  animation: shake-input 0.3s ease-in-out;
+}
+
+/* ─── System header ──────────────────────────────────────────────────────── */
+.sys-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sys-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.sys-tag {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  opacity: 0.6;
+  font-weight: 300;
+}
+
+.sys-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  text-shadow: var(--glow-md);
+}
+
+.sys-subtitle {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  opacity: 0.4;
+  text-transform: uppercase;
+}
+
+.sys-meta {
+  font-size: 0.68rem;
+  font-weight: 300;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+/* ─── Doomscroll warning ─────────────────────────────────────────────────── */
+.doomscroll-warning {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.warn-tag {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-shadow: var(--glow-sm);
+  flex-shrink: 0;
+}
+
+.warn-text {
+  color: var(--muted);
+}
+
+/* ─── Data lake section ──────────────────────────────────────────────────── */
+.data-lake {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lake-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+
+.lake-section-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  opacity: 0.4;
+  font-weight: 700;
+}
+
+/* The single ultra-thin glowing line ───────── */
+.lake-line-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.lake-line-track {
+  flex: 1;
+  height: 1px;
+  background: rgba(255,170,0,0.08);
+  position: relative;
+  overflow: visible;
+}
+
+.lake-line-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--accent);
+  box-shadow: var(--glow-md);
+  transform-origin: left center;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lake-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  opacity: 0.55;
+  min-width: 2.8rem;
+  text-align: right;
+  font-weight: 300;
+}
+
+/* Sediment container ───────── */
+.sediment-container {
+  width: 100%;
+  height: 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Individual sediment digits ───────── */
+.sediment-bit {
+  position: absolute;
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--accent);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  animation: sediment-fall var(--fall-dur, 4s) ease-in var(--fall-delay, 0s) forwards;
+}
+
+@keyframes sediment-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  10% {
+    opacity: 0.7;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0.08;
+    transform: translateY(var(--fall-dist, 80px));
+  }
+}
+
+/* ─── Work Order section ──────────────────────────────────────────────────── */
+.work-order-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.work-order-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.work-order-id {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  font-weight: 300;
+}
+
+.work-order-prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 170, 0, 0.03);
+  border: 1px solid rgba(255, 170, 0, 0.1);
+  border-left: 2px solid rgba(255, 170, 0, 0.4);
+  padding: 0.75rem 1rem;
+}
+
+.work-order-bits {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1;
+}
+
+/* Individual bit characters inside the work order */
+.bit-char {
+  display: inline-block;
+  transition: color 0.08s, text-shadow 0.08s, opacity 0.08s;
+}
+
+/* Already typed correctly — dim out */
+.bit-char.done {
+  color: var(--success);
+  opacity: 0.3;
+  text-shadow: none;
+}
+
+/* The character the user must type RIGHT NOW */
+.bit-char.active {
+  color: var(--accent);
+  text-shadow: var(--glow-md);
+  animation: blink 0.9s step-end infinite;
+}
+
+/* Waiting characters — dimmed */
+.bit-char.pending {
+  color: var(--text-dim);
+  text-shadow: none;
+  opacity: 0.4;
+}
+
+.work-order-instruction {
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  font-weight: 300;
+  opacity: 0.6;
+}
+
+/* ─── Input zone ─────────────────────────────────────────────────────────── */
+.input-zone {
+  position: relative;
+  width: 100%;
+}
+
+/* The actual <input> is invisible — it just captures keystrokes */
+.bit-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  background: transparent;
+  border: none;
+  outline: none;
+  caret-color: transparent;
+  font-size: 0;
+  z-index: 10;
+}
+
+/* The visible terminal prompt line */
+.prompt-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0;
+}
+
+.prompt-prefix {
+  color: var(--accent);
+  text-shadow: var(--glow-sm);
+  font-weight: 700;
+}
+
+/* Blinking cursor */
+.cursor {
+  color: var(--accent);
+  text-shadow: var(--glow-md);
+  font-weight: 700;
+  animation: blink 1.1s step-end infinite;
+}
+
+/* Error state on the cursor/prompt */
+.prompt-line.error-flash .cursor,
+.prompt-line.error-flash .prompt-prefix {
+  color: var(--error);
+  text-shadow: var(--glow-error);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ─── Feedback line ──────────────────────────────────────────────────────── */
+.feedback {
+  font-size: 0.7rem;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  opacity: 0;
+  min-height: 1.2em;
+  text-shadow: var(--glow-text);
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.feedback.visible {
+  opacity: 0.75;
+}
+
+.feedback.error-msg {
+  color: var(--error);
+  text-shadow: var(--glow-error);
+  opacity: 0;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.feedback.error-msg.visible {
+  opacity: 0.85;
+}
+
+/* ─── Ripple ring on valid keypress ──────────────────────────────────────── */
+.ripple {
+  position: fixed;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  box-shadow: var(--glow-sm);
+  pointer-events: none;
+  z-index: 50;
+  transform: scale(0);
+  opacity: 0.7;
+  animation: ripple-expand 0.45s ease-out forwards;
+}
+
+.ripple.error-ripple {
+  border-color: var(--error);
+  box-shadow: var(--glow-error);
+}
+
+@keyframes ripple-expand {
+  to {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
+
+/* ─── Game Over Overlay ──────────────────────────────────────────────────── */
+.game-over-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 8, 8, 0.96);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-over-overlay[hidden] {
+  display: none;
+}
+
+.game-over-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 480px;
+  padding: 0 2rem;
+  text-align: left;
+}
+
+.game-over-tag {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--error);
+  font-weight: 700;
+  text-shadow: var(--glow-error);
+}
+
+.game-over-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--error);
+  text-shadow: var(--glow-error);
+}
+
+.game-over-msg {
+  font-size: 0.8rem;
+  font-weight: 300;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  line-height: 2;
+}
+
+.game-over-fail {
+  color: var(--error);
+  font-weight: 700;
+  text-shadow: var(--glow-error);
+}
+
+.restart-btn {
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid rgba(255, 170, 0, 0.3);
+  padding: 0.7rem 1.2rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: border-color 0.2s, text-shadow 0.2s, background 0.2s;
+  align-self: flex-start;
+  margin-top: 0.4rem;
+}
+
+.restart-btn:hover,
+.restart-btn:focus {
+  border-color: var(--accent);
+  text-shadow: var(--glow-sm);
+  background: var(--accent-dim);
+  outline: none;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .terminal {
+    padding: 0 1.25rem;
+    gap: 2.4rem;
+  }
+  .sys-title {
+    font-size: 1.15rem;
+  }
+  .work-order-bits {
+    font-size: 1.4rem;
+    letter-spacing: 0.15em;
+  }
+}
